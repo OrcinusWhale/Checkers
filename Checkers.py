@@ -2,6 +2,7 @@ from kivy.uix.layout import Layout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.graphics import *
 from kivy.app import App
@@ -24,6 +25,14 @@ class Square(ButtonBehavior, Widget):
 class Board(Layout):
     def __init__(self):
         Layout.__init__(self)
+        self.reset = Button(text="Restart Game")
+        self.reset.pos = (Window.size[0] / 2 - self.reset.size[0] / 2, Window.size[1] / 4 - self.reset.size[1] / 2)
+        self.reset.bind(on_press=self.reset_game)
+        self.win_title = Label()
+        self.reset_game()
+
+    def reset_game(self, touch=None):
+        self.clear_widgets()
         self.squares = list()
         self.turn = "r"
         black = True
@@ -32,7 +41,8 @@ class Board(Layout):
         self.can_jump = None
         for i, y in enumerate(range(Window.size[1], 0 - 2 * int(Window.size[1] / 8), -int(Window.size[1] / 8))):
             self.squares.append(list())
-            for j, x in enumerate(range(-int(Window.size[0] / 8), Window.size[0] + int(Window.size[0] / 8), int(Window.size[0] / 8))):
+            for j, x in enumerate(
+                    range(-int(Window.size[0] / 8), Window.size[0] + int(Window.size[0] / 8), int(Window.size[0] / 8))):
                 square = Square(pos=(x, y), size=(Window.size[0] / 8, Window.size[1] / 8), black=black, row=i, col=j)
                 self.squares[i].append(square)
                 if i not in [0, 9] and j not in [0, 9]:
@@ -57,6 +67,20 @@ class Board(Layout):
                         self.add_widget(square)
             black = not black
 
+    def win(self):
+        for i in self.squares:
+            for j in i:
+                j.disabled = True
+        self.add_widget(self.reset)
+        if self.selected.unit == "r":
+            self.win_title.text = "RED PLAYER WINS"
+            self.win_title.color = (1, 0, 0)
+        else:
+            self.win_title.text = "BLUE PLAYER WINS"
+            self.win_title.color = (0, 0, 1)
+        self.win_title.pos = (Window.size[0] / 2 - self.win_title.size[0] / 2, Window.size[1] * 3 / 4 - self.win_title.size[1] / 2)
+        self.add_widget(self.win_title)
+
     def click(self, touch):
         if touch == self.selected:
             touch.selected = False
@@ -78,14 +102,29 @@ class Board(Layout):
                     self.toClear.unit = None
                     self.toClear.canvas.clear()
                     self.draw_square(self.toClear)
+                    self.toClear = None
                 if self.selected.unit == self.turn:
                     if self.turn == "r":
                         self.turn = "b"
                     else:
                         self.turn = "r"
+                if self.selected.unit == "r" and touch.row == 1:
+                    self.selected.queen = True
                 self.selected.selected = False
                 touch.unit = self.selected.unit
+                touch.queen = self.selected.queen
+                winner = True
+                for i in self.squares:
+                    for j in i:
+                        if self.selected.unit != j.unit is not None:
+                            winner = False
+                            break
+                    if not winner:
+                        break
+                if winner:
+                    self.win()
                 self.selected.unit = None
+                self.selected.queen = False
                 self.selected.canvas.clear()
                 self.draw_square(self.selected)
                 self.selected = None
@@ -107,7 +146,7 @@ class Board(Layout):
                     self.toClear = self.squares[int(self.selected.row + (square.row - self.selected.row) / 2)][int(self.selected.col + (square.col - self.selected.col) / 2)]
                     for i in range(square.row - 1, square.row + 2):
                         for j in range(square.col - 1, square.col + 2):
-                            if (i != square.row or j != square.col) and (i != int(self.selected.row + (square.row - self.selected.row) / 2) or j != int(self.selected.col + (square.col - self.selected.col) / 2)) and self.selected.unit != self.squares[i][j].unit is not None and self.squares[square.row + (i - square.row)*2][square.col + (j - square.col)].unit is None:
+                            if (i != square.row or j != square.col) and (i != int(self.selected.row + (square.row - self.selected.row) / 2) or j != int(self.selected.col + (square.col - self.selected.col) / 2)) and self.selected.unit != self.squares[i][j].unit is not None and self.squares[square.row + (i - square.row)*2][square.col + (j - square.col)*2].unit is None and square.row + (i - square.row)*2 not in [0, 9] and square.col + (j - square.col)*2 not in [0, 9]:
                                 self.can_jump = square
                                 break
                     if self.can_jump == self.selected:
@@ -144,7 +183,7 @@ class Board(Layout):
                 else:
                     Color(1, 1, 1)
                     black = True
-                Ellipse(pos=(square.pos[0] + square.size[0] / 2 - d / 4, square.pos[1]), size=(d / 2, d / 2))
+                Ellipse(pos=(square.pos[0] + square.size[0] / 2 - d / 4, square.pos[1] + square.size[1] / 2 - d / 4), size=(d / 2, d / 2))
 
 
 class Game(App):
