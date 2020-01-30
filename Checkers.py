@@ -142,11 +142,8 @@ class Board(Layout):
             if (abs(square.row - self.selected.row) == 2 and abs(square.col - self.selected.col) == 2) or (abs(square.row - self.selected.row) == 2 and square.col - self.selected.col == 0) or (abs(square.col - self.selected.col) == 2 and square.row - self.selected.row == 0):
                 if self.selected.unit != self.squares[int(self.selected.row + (square.row - self.selected.row) / 2)][int(self.selected.col + (square.col - self.selected.col) / 2)].unit is not None:
                     self.toClear = self.squares[int(self.selected.row + (square.row - self.selected.row) / 2)][int(self.selected.col + (square.col - self.selected.col) / 2)]
-                    for i in range(square.row - 1, square.row + 2):
-                        for j in range(square.col - 1, square.col + 2):
-                            if (i != square.row or j != square.col) and (i != int(self.selected.row + (square.row - self.selected.row) / 2) or j != int(self.selected.col + (square.col - self.selected.col) / 2)) and self.selected.unit != self.squares[i][j].unit is not None and self.squares[square.row + (i - square.row)*2][square.col + (j - square.col)*2].unit is None and square.row + (i - square.row)*2 not in [0, 9] and square.col + (j - square.col)*2 not in [0, 9]:
-                                self.can_jump = square
-                                break
+                    if self.check_jump(square):
+                        self.can_jump = square
                     if self.can_jump == self.selected:
                         self.can_jump = None
                     return True
@@ -158,9 +155,15 @@ class Board(Layout):
                             if self.selected.unit != self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
                                 passed = True
                                 self.toClear = self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))]
+                                if self.check_jump(square):
+                                    self.can_jump = square
+                                else:
+                                    self.can_jump = None
                             elif self.selected.unit == self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit or self.selected == self.can_jump:
+                                self.toClear = None
                                 return False
                         elif self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
+                            self.toClear = None
                             return False
                     if passed or self.selected != self.can_jump:
                         return True
@@ -171,13 +174,62 @@ class Board(Layout):
                             if self.selected.unit != self.squares[i][square.col].unit is not None:
                                 passed = True
                                 self.toClear = self.squares[i][square.col]
+                                if self.check_jump(square):
+                                    self.can_jump = square
+                                else:
+                                    self.can_jump = None
                             elif self.selected.unit == self.squares[i][square.col].unit or self.selected == self.can_jump:
+                                self.toClear = None
                                 return False
                         elif self.squares[i][square.col].unit is not None:
+                            self.toClear = None
                             return False
                     if passed or self.selected != self.can_jump:
                         return True
         return False
+
+    def check_jump(self, square):
+        if square.queen:
+            for i in range(1, 7):
+                if square.row - i - 1 > 0 and square.col - i - 1 > 0:
+                    if square.unit != self.squares[square.row - i][square.col - i] is not None:
+                        if self.squares[square.row - i - 1][square.col - i - 1] is None:
+                            return True
+                if square.row - i - 1 > 0:
+                    if square.unit != self.squares[square.row - i][square.col] is not None:
+                        if self.squares[square.row - i - 1][square.col] is None:
+                            return True
+                if square.row - i - 1 > 0 and square.col + i + 1 < 9:
+                    if square.unit != self.squares[square.row - i][square.col + i] is not None:
+                        if self.squares[square.row - i - 1][square.col + i + 1] is None:
+                            return True
+                if square.col + i + 1 < 9:
+                    if square.unit != self.squares[square.row][square.col + i] is not None:
+                        if self.squares[square.row][square.col + i + 1] is None:
+                            return True
+                if square.row + i + 1 < 9 and square.col + i + 1 < 9:
+                    if square.unit != self.squares[square.row + i][square.col + i] is not None:
+                        if self.squares[square.row + i + 1][square.col + i + 1] is None:
+                            return True
+                if square.row + i + 1 < 9:
+                    if square.unit != self.squares[square.row + i][square.col] is not None:
+                        if self.squares[square.row + i + 1][square.col] is None:
+                            return True
+                if square.row + i + 1 < 9 and square.col - i - 1 > 0:
+                    if square.unit != self.squares[square.row + i][square.col - i] is not None:
+                        if self.squares[square.row + i + 1][square.col - i - 1] is None:
+                            return True
+                if square.col - i - 1 > 0:
+                    if square.unit != self.squares[square.row][square.col - i] is not None:
+                        if self.squares[square.row][square.col - i - 1] is None:
+                            return True
+            return False
+        else:
+            for i in range(square.row - 1, square.row + 2):
+                for j in range(square.col - 1, square.col + 2):
+                    if (i != square.row or j != square.col) and (i != int(self.selected.row + (square.row - self.selected.row) / 2) or j != int(self.selected.col + (square.col - self.selected.col) / 2)) and self.selected.unit != self.squares[i][j].unit is not None and self.squares[square.row + (i - square.row)*2][square.col + (j - square.col)*2].unit is None and square.row + (i - square.row)*2 not in [0, 9] and square.col + (j - square.col)*2 not in [0, 9]:
+                        return True
+            return False
 
     def draw_square(self, square):
         with square.canvas:
