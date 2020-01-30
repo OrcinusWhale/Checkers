@@ -28,7 +28,7 @@ class Board(Layout):
         self.reset = Button(text="Restart Game")
         self.reset.pos = (Window.size[0] / 2 - self.reset.size[0] / 2, Window.size[1] / 4 - self.reset.size[1] / 2)
         self.reset.bind(on_press=self.reset_game)
-        self.win_title = Label()
+        self.win_title = Label(color=(1, 93 / 255, 136/255))
         self.reset_game()
 
     def reset_game(self, touch=None):
@@ -74,10 +74,8 @@ class Board(Layout):
         self.add_widget(self.reset)
         if self.selected.unit == "r":
             self.win_title.text = "RED PLAYER WINS"
-            self.win_title.color = (1, 0, 0)
         else:
             self.win_title.text = "BLUE PLAYER WINS"
-            self.win_title.color = (0, 0, 1)
         self.win_title.pos = (Window.size[0] / 2 - self.win_title.size[0] / 2, Window.size[1] * 3 / 4 - self.win_title.size[1] / 2)
         self.add_widget(self.win_title)
 
@@ -108,7 +106,7 @@ class Board(Layout):
                         self.turn = "b"
                     else:
                         self.turn = "r"
-                if self.selected.unit == "r" and touch.row == 1:
+                if (self.selected.unit == "r" and touch.row == 1) or (self.selected.unit == "b" and touch.row == 8):
                     self.selected.queen = True
                 self.selected.selected = False
                 touch.unit = self.selected.unit
@@ -152,6 +150,33 @@ class Board(Layout):
                     if self.can_jump == self.selected:
                         self.can_jump = None
                     return True
+            if self.selected.queen:
+                if abs(square.row - self.selected.row) == abs(square.col - self.selected.col) or square.row - self.selected.row == 0:
+                    passed = False
+                    for i in range(1, abs(square.col - self.selected.col)):
+                        if i == 1:
+                            if self.selected.unit != self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
+                                passed = True
+                                self.toClear = self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))]
+                            elif self.selected.unit == self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit or self.selected == self.can_jump:
+                                return False
+                        elif self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
+                            return False
+                    if passed or self.selected != self.can_jump:
+                        return True
+                elif square.col - self.selected.col == 0:
+                    passed = False
+                    for i in range(square.row + (square.row<self.selected.row)-(square.row>self.selected.row), self.selected.row, (square.row<self.selected.row)-(square.row>self.selected.row)):
+                        if i == square.row + ((square.row<self.selected.row)-(square.row>self.selected.row)):
+                            if self.selected.unit != self.squares[i][square.col].unit is not None:
+                                passed = True
+                                self.toClear = self.squares[i][square.col]
+                            elif self.selected.unit == self.squares[i][square.col].unit or self.selected == self.can_jump:
+                                return False
+                        elif self.squares[i][square.col].unit is not None:
+                            return False
+                    if passed or self.selected != self.can_jump:
+                        return True
         return False
 
     def draw_square(self, square):
