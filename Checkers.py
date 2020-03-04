@@ -173,44 +173,50 @@ class Board(Layout):
             if self.selected.queen:
                 # The selected square is on a diagonal
                 if abs(square.row - self.selected.row) == abs(square.col - self.selected.col):
-                    passed = False  # Flag used for a c
+                    passed = False  #
                     for i in range(1, abs(square.col - self.selected.col)):
+                        # If the current square is one before the selected square
                         if i == 1:
+                            # If there is an enemy unit in that square
                             if self.selected.unit != self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
                                 passed = True
                                 self.toClear = self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))]
+                                # If there is another opportunity to eat someone
                                 if self.check_jump(square):
                                     self.can_jump = square
                                 else:
                                     self.can_jump = None
+                            # If there is an ally unit in that square or the selected unit is one that can only jump
                             elif self.selected.unit == self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit or self.selected == self.can_jump:
                                 self.toClear = None
                                 return False
+                        # If there is a unit in that square
                         elif self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
                             self.toClear = None
                             return False
+                    #
                     if passed or self.selected != self.can_jump:
                         return True
         return False
 
     def check_jump(self, square):
-        if square.queen:
+        if self.selected.queen:
             for i in range(1, 7):
                 if square.row - i - 1 > 0 and square.col - i - 1 > 0:
                     if square.unit != self.squares[square.row - i][square.col - i] is not None:
-                        if self.squares[square.row - i - 1][square.col - i - 1] is None:
+                        if self.squares[square.row - i - 1][square.col - i - 1].unit is None:
                             return True
                 if square.row - i - 1 > 0 and square.col + i + 1 < 9:
                     if square.unit != self.squares[square.row - i][square.col + i] is not None:
-                        if self.squares[square.row - i - 1][square.col + i + 1] is None:
+                        if self.squares[square.row - i - 1][square.col + i + 1].unit is None:
                             return True
                 if square.row + i + 1 < 9 and square.col + i + 1 < 9:
                     if square.unit != self.squares[square.row + i][square.col + i] is not None:
-                        if self.squares[square.row + i + 1][square.col + i + 1] is None:
+                        if self.squares[square.row + i + 1][square.col + i + 1].unit is None:
                             return True
                 if square.row + i + 1 < 9 and square.col - i - 1 > 0:
                     if square.unit != self.squares[square.row + i][square.col - i] is not None:
-                        if self.squares[square.row + i + 1][square.col - i - 1] is None:
+                        if self.squares[square.row + i + 1][square.col - i - 1].unit is None:
                             return True
             return False
         else:
