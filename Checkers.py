@@ -173,13 +173,11 @@ class Board(Layout):
             if self.selected.queen:
                 # The selected square is on a diagonal
                 if abs(square.row - self.selected.row) == abs(square.col - self.selected.col):
-                    passed = False  #
                     for i in range(1, abs(square.col - self.selected.col)):
                         # If the current square is one before the selected square
                         if i == 1:
                             # If there is an enemy unit in that square
                             if self.selected.unit != self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
-                                passed = True
                                 self.toClear = self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))]
                                 # If there is another opportunity to eat someone
                                 if self.check_jump(square):
@@ -194,32 +192,47 @@ class Board(Layout):
                         elif self.squares[square.row + i * ((square.row < self.selected.row)-(square.row > self.selected.row))][square.col + i * ((square.col < self.selected.col)-(square.col > self.selected.col))].unit is not None:
                             self.toClear = None
                             return False
-                    #
-                    if passed or self.selected != self.can_jump:
+                    # A check to make sure the unit doesn't make a move without eating after eating once
+                    if self.selected != self.can_jump:
                         return True
         return False
 
+    # Checks if the unit has another opportunity to jump
     def check_jump(self, square):
+        # If the unit is a queen
         if self.selected.queen:
             for i in range(1, 7):
+                # The check is is still inside the board
                 if square.row - i - 1 > 0 and square.col - i - 1 > 0:
-                    if square.unit != self.squares[square.row - i][square.col - i] is not None:
+                    # The square contains an enemy unit
+                    if square.unit != self.squares[square.row - i][square.col - i].unit is not None:
+                        # The square after is empty
                         if self.squares[square.row - i - 1][square.col - i - 1].unit is None:
                             return True
+                # The check is is still inside the board
                 if square.row - i - 1 > 0 and square.col + i + 1 < 9:
-                    if square.unit != self.squares[square.row - i][square.col + i] is not None:
+                    # The square contains an enemy unit
+                    if square.unit != self.squares[square.row - i][square.col + i].unit is not None:
+                        # The square after is empty
                         if self.squares[square.row - i - 1][square.col + i + 1].unit is None:
                             return True
+                # The check is is still inside the board
                 if square.row + i + 1 < 9 and square.col + i + 1 < 9:
-                    if square.unit != self.squares[square.row + i][square.col + i] is not None:
+                    # The square contains an enemy unit
+                    if square.unit != self.squares[square.row + i][square.col + i].unit is not None:
+                        # The square after is empty
                         if self.squares[square.row + i + 1][square.col + i + 1].unit is None:
                             return True
+                # The check is is still inside the board
                 if square.row + i + 1 < 9 and square.col - i - 1 > 0:
-                    if square.unit != self.squares[square.row + i][square.col - i] is not None:
+                    # The square contains an enemy unit
+                    if square.unit != self.squares[square.row + i][square.col - i].unit is not None:
+                        # The square after is empty
                         if self.squares[square.row + i + 1][square.col - i - 1].unit is None:
                             return True
             return False
         else:
+            # Check around the selected square for a valid jump (An enemy unit in diagonal where the square right after is empty)
             for i in [square.row - 1, square.row + 1]:
                 for j in [square.col - 1, square.col + 1]:
                     if (i != int(self.selected.row + (square.row - self.selected.row) / 2) or j != int(self.selected.col + (square.col - self.selected.col) / 2)) and self.selected.unit != self.squares[i][j].unit is not None and self.squares[square.row + (i - square.row)*2][square.col + (j - square.col)*2].unit is None and square.row + (i - square.row) * 2 not in [0, 9] and square.col + (j - square.col) * 2 not in [0, 9]:
@@ -228,6 +241,7 @@ class Board(Layout):
 
     def draw_square(self, square):
         with square.canvas:
+            # If the square is of black color
             if square.black:
                 Color(0, 0, 0)
                 black = False
@@ -235,20 +249,26 @@ class Board(Layout):
                 Color(1, 1, 1)
                 black = True
             Rectangle(pos=square.pos, size=square.size)
-            d = square.size[1]
+            d = square.size[1]  # The diameter of a unit
+            # If the unit in the square is red
             if square.unit == "r":
+                # If the unit is selected
                 if square.selected:
                     Color(1, 1, 0)
                 else:
                     Color(1, 0, 0)
                 Ellipse(pos=(square.pos[0] + square.size[0] / 2 - d / 2, square.pos[1]), size=(d, d))
+            # If the unit in the square is blue
             elif square.unit == "b":
+                # If the unit is selected
                 if square.selected:
                     Color(0, 1, 1)
                 else:
                     Color(0, 0, 1)
                 Ellipse(pos=(square.pos[0] + square.size[0] / 2 - d / 2, square.pos[1]), size=(d, d))
+            # If the unit is a queen
             if square.queen:
+                # If the square's color is black
                 if square.black:
                     Color(0, 0, 0)
                     black = False
